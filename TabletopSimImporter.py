@@ -11,7 +11,23 @@ from mathutils import Euler
 sys.path.append('/Applications/Blender.app/Contents/Resources/2.93/python/bin')
 import wget
 
-
+class Transform():
+    def __init__(self, posx=0, posy=0, posz=0, rotx=0, roty=0, rotz=0, scalex=1, scaley=1, scalez=1):
+        self.posx = posx
+        self.posy = posy
+        self.posz = posz
+        self.rotx = rotx
+        self.roty = roty
+        self.rotz = rotz
+        self.scalex = scalex
+        self.scaley = scaley
+        self.scalez = scalez
+        
+class ColorDiffuse():
+    def __init__(self, r=1, g=1, b=1):
+        self.r = r
+        self.g = g
+        self.b = b
 
 class CustomModel():
     def __init__(self, mesh_url, diffuse_url, transform, color_diffuse):
@@ -20,9 +36,17 @@ class CustomModel():
         self.transform = transform
         self.color_diffuse = color_diffuse
 
+class Card():
+    def __init__(self, index, face_url, sheet_width, sheet_height, transform):
+        self.index=index
+        self.face_url=face_url
+        self.sheet_width=sheet_width
+        self.sheet_height=sheet_height
+        self.transform = transform
         
 class Builder():
-    savepath = '/Users/hansen/Desktop/hackdays/'
+    def __init__(self, savepath):
+        self.savepath = savepath
 
     # Download file, returns path
     def download_file(self, url):
@@ -36,6 +60,8 @@ class Builder():
             filename = wget.detect_filename(response.url).replace('|', '_')
 
         filepath = Builder.savepath + filename
+        if os.path.isfile(filepath): return filepath #if file already exists
+        
         open(filepath, 'wb').write(response.content)
 
         return filepath
@@ -83,8 +109,9 @@ class Builder():
             
         #set transform
         self.set_transform(imported_object, custom_model.transform)
-        #delete file
-        #os.remove(mesh_path)
+
+    def build_card(self, card):    
+    
 
 
 
@@ -93,23 +120,7 @@ class Builder():
 ##############################################
 
 # Python program to read a json file of Tabletop Simulator saves
-class Transform():
-    def __init__(self, posx=0, posy=0, posz=0, rotx=0, roty=0, rotz=0, scalex=1, scaley=1, scalez=1):
-        self.posx = posx
-        self.posy = posy
-        self.posz = posz
-        self.rotx = rotx
-        self.roty = roty
-        self.rotz = rotz
-        self.scalex = scalex
-        self.scaley = scaley
-        self.scalez = scalez
-        
-class ColorDiffuse():
-    def __init__(self, r=1, g=1, b=1):
-        self.r = r
-        self.g = g
-        self.b = b
+
 
 def parse_tts_json(json_path, builder):
     # TODO: Iterate through a list of JSON files.
@@ -169,7 +180,6 @@ def parse_tts_json(json_path, builder):
             meshURL = customMesh.get('MeshURL')
             textureURL = customMesh.get('DiffuseURL') # textureURL will be 'None' for objects without a texture.
             
-            print(meshURL)
             custom_model = CustomModel(meshURL, textureURL, transform_holder, color_diffuse_holder)
             builder.build_custom_model(custom_model)
             # TODO: Handle Custom_Model_Stack?
@@ -190,8 +200,10 @@ def parse_tts_json(json_path, builder):
 
             cardFaceURL = deck.get('FaceURL')
             cardBackURL = deck.get('BackURL')
-            cardWidth = deck.get('NumWidth')
-            cardHeight = deck.get('NumHeight')
+            cardDeckWidth = deck.get('NumWidth')
+            cardDeckHeight = deck.get('NumHeight')
+            
+            card = Card(cardNumber, cardFaceURL, cardDeckWidth, cardDeckHeight, transform_holder)
 
         # The following is only included in the "DeckCustom" object type.
         # TODO: Pull in each Card's DeskCustom, get the ID for the deck, then pull out each card's ID by removing the deck ID from the beginning of it.
@@ -224,7 +236,7 @@ def parse_tts_json(json_path, builder):
 
 
 json_path = ('/Users/hansen/Desktop/agricola.json')
-builder = Builder()
+builder = Builder('/Users/hansen/Desktop/hackdays/')
 parse_tts_json(json_path, builder)
 
 #bpy.ops.import_scene.obj(filepath='/Users/hansen/Desktop/hackdays/Tokaido.Board.obj')
